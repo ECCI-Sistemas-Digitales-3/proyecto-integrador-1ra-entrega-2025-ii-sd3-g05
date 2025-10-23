@@ -22,26 +22,33 @@ Resistencia, Para calentar pintura.
 ![Imagen de WhatsApp 2025-10-22 a las 15 22 25_f4978d3c](https://github.com/user-attachments/assets/1090b54f-73f7-4983-96c0-66be65da83bf)
 
 
-Variable para controlar el estado actual d
-
 import network
 import time
 from machine import Pin, I2C
 from umqtt.robust import MQTTClient
 
-Importar configuración desde config.py
+# Importar configuración desde config.py
 try:
     from config import WIFI_SSID, WIFI_PASS, MQTT_BROKER, MQTT_TOPIC
 except ImportError:
     raise Exception("⚠️ Debes crear un archivo config.py con tus credenciales (ver config.py.sample)")
 
+# =======================
+# Configuración I2C y LED
+# =======================
 i2c = I2C(0, scl=Pin(22), sda=Pin(21), freq=100000)
 led = Pin(13, Pin.OUT)
 led.off()
 
+# =======================
+# Umbrales de temperatura
+# =======================
 TEMPERATURA_ENCENDER = 29.0  # Encender LED cuando supere 29°C
 TEMPERATURA_APAGAR  = 28.0  # Apagar LED cuando baje de 28°C
 
+# =======================
+# Conectar WiFi
+# =======================
 def conectar_wifi():
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
@@ -52,16 +59,26 @@ def conectar_wifi():
         time.sleep(1)
     print("\n✅ WiFi conectado:", wlan.ifconfig())
 
+# =======================
+# Conectar MQTT
+# =======================
 def conectar_mqtt():
     client = MQTTClient("esp32", MQTT_BROKER)
     client.connect()
     print("✅ Conectado a broker MQTT:", MQTT_BROKER)
     return client
 
+# =======================
+# Simulación lectura temperatura
+# (En práctica puedes leer desde un sensor real como LM75, DHT, etc.)
+# =======================
 def leer_temperatura():
     # Aquí puedes poner lectura real del sensor
     return 25 + (time.time() % 10)  # Simulación 25°C a 35°C
 
+# =======================
+# Programa principal
+# =======================
 def main():
     conectar_wifi()
     client = conectar_mqtt()
