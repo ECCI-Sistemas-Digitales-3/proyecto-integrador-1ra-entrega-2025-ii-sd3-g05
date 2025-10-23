@@ -27,25 +27,87 @@ import time
 from machine import Pin, I2C
 from umqtt.robust import MQTTClient
 
-# =======================
-# CONFIGURACIONES
-# =======================
-WIFI_SSID = "iPhone Michael"   # Cambia por tu red WiFi
-WIFI_PASS = "michael96"              # Contraseña de tu WiFi
-MQTT_BROKER = "172.20.10.2"       # IP de la Raspberry Pi (Broker MQTT)
-MQTT_TOPIC = b"in/micro/sensor/temperatura"   # Tema donde se publicarán los datos
+# Importar configuración desde config.py
+try:
+    from config import WIFI_SSID, WIFI_PASS, MQTT_BROKER, MQTT_TOPIC
+except ImportError:
+    raise Exception("⚠️ Debes crear un archivo config.py con tus credenciales (ver config.py.sample)")
 
-# Pines I2C ESP32
+# =======================
+# Configuración I2C y LED
+# =======================
 i2c = I2C(0, scl=Pin(22), sda=Pin(21), freq=100000)
-
-# LED en pin 8/6. 
 led = Pin(13, Pin.OUT)
-led.off()  # Asegurar que el LED empiece apagado
+led.off()
 
+# =======================
 # Umbrales de temperatura
-TEMPERATURA_ENCENDER = 10.0  # Encender LED cuando sea mayor a 20°C
-TEMPERATURA_APAGAR = 25.0    # Apagar LED cuando supere 30°C
+# =======================
+TEMPERATURA_ENCENDER = 29.0  # Encender LED cuando supere 29°C
+TEMPERATURA_APAGAR  = 28.0  # Apagar LED cuando baje de 28°C
 
-# Variable para controlar el estado actual d
+# =======================
+# Conectar WiFi
+# =======================
+def conectar_wifi():
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    wlan.connect(WIFI_SSID, WIFI_PASS)
+    print("Conectando a WiFi...", end="")
+    while not wlan.isconnected():
+        print(".", end="")
+        time.sleep(1)
+    print("\n✅ WiFi conectado:", wlan.ifconfig())
 
-<!-- Subir en una carpeta src los códigos que tienen hasta el momento y esta sección agregar lo que consideren necesario referente a sus avances. -->
+# =======================
+# Conectar MQTT
+# =======================
+def conectar_mqtt():
+    client = MQTTClient("esp32", MQTT_BROKER)
+    client.connect()
+    print("✅ Conectado a broker MQTT:", MQTT_BROKER)
+    return client
+
+# =======================
+# Simulación lectura temperatura
+# (En práctica puedes leer desde un sensor real como LM75, DHT, etc.)
+# =======================
+def leer_temperatura():
+    # Aquí puedes poner lectura real del sensor
+    return 25 + (time.time() % 10)  # Simulación 25°C a 35°C
+
+# =======================
+# Programa principal
+# =======================
+def main():
+    conectar_wifi()
+    client = conectar_mqtt()
+
+    estado_led = False
+
+    try:
+        while True:
+            temp = leer_temperatura()
+            print(f"🌡️ Temperatura: {temp:.2f} °C")
+
+            # Publicar al broker
+            client.publish(MQTT_TOPIC, str(temp))
+
+            # Control LED según umbrales
+            if temp >= TEMPERATURA_ENCENDER and not estado_led:
+                led.on()
+                estado_led = True
+                print("💡 LED encendido")
+            elif temp <= TEMPERATURA_APAGAR and estado_led:
+                led.off()
+                estado_led = False
+                print("💡 LED apagado")
+
+            time.sleep(2)
+
+    except KeyboardInterrupt:
+        print("🛑 Programa interrumpido")
+        client.disconnect()
+
+if __name__ == "__main__":
+    main()
