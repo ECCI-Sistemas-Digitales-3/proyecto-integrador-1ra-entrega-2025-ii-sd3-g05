@@ -2,16 +2,16 @@
 # Proyecto integrador 1ra Entrega
 
 ## Integrantes
-
+Michael Yesid Velasquez V.- Cod: 94882 Yeison Gabriel Niño J. - Cod: 61096 Carlos Eduardo Puentes L. - Cod: 89466
 
 
 ## Arquitectura propuesta
 
 
 
+
 ## Periférico a trabajar
-
-
+Resistencia, Para calentar las pinturas
 ## Avances
 
 <!-- Subir en una carpeta src los códigos que tienen hasta el momento y esta sección agregar lo que consideren necesario referente a sus avances. -->
